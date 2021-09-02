@@ -1,2 +1,2 @@
-# FHIRClient
-A simple PHP client for SMART on FHIR
+# LDAPClient
+A PHP class that simplifies connecting to and searching LDAP directories.
