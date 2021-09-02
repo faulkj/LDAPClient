@@ -1,6 +1,6 @@
 <?php namespace FaulkJ\LDAPClient;
    /*
-    * LDAP Client Class v1.3
+    * LDAP Client Class v1.4
     *
     * Kopimi 2021 Joshua Faulkenberry
     * Unlicensed under The Unlicense
@@ -9,7 +9,7 @@
 
    class LDAPClient {
 
-      const   version = "1.3";
+      const   version = "1.4";
 
       private $server;
       private $dn;
@@ -17,10 +17,10 @@
       private $password;
       private $ldapconn;
       private $options = [
-         "identifier" => "samaccountname",
-         "dn"         => "distinguishedname",
-         "photo"      => "thumbnailphoto",
-         "member"     => "memberof"
+         "dn"     => "distinguishedname",
+         "id"     => "samaccountname",
+         "member" => "memberof",
+         "photo"  => "thumbnailphoto"
       ];
       private $debug   = false;
 
@@ -50,27 +50,11 @@
          $this->connect();
       }
 
-      private function cvtQuotes($string) {
-         return str_replace([
-                  chr(145),
-                  chr(146),
-                  chr(147),
-                  chr(148),
-                  chr(151)
-         ], [
-                  "'",
-                  "'",
-                  '"',
-                  '"',
-                  ' - '
-         ], $string);
-      }
-
       public function login($id, $pass, $attr) {
          if(!$id || !$pass) return false;
 
          $res = false;
-         if($usr = $this->search("({$this->options['identifier']}={$id})", $attr)) {
+         if($usr = $this->search("({$this->options['id']}={$id})", $attr)) {
             if($this->bind($usr->dn, $pass)) {
                $this->unbind();
                $res = $usr;
@@ -82,7 +66,7 @@
          return $res;
       }
 
-      public function search($filter, $attr = [], $dn = null, $fullDNs = false) {
+      public function search($filter, $attr = [], $dn = null, $resolveDNs = false) {
          if($this->bind($this->bindDN, $this->password)) {
             $dn = (array) ($dn ? $dn :$this->baseDN);
 
@@ -103,23 +87,30 @@
                            $lbl = is_string($key) ? $key : $at;
 
                            if($at == $this->options['photo']) {
-                              if($values = @ldap_get_values_len($this->ldapconn, $entry, $at)) {
-                                 $usr[$lbl] = $values[0];
-                              }
+                              if($values = @ldap_get_values_len($this->ldapconn, $entry, $at)) $usr[$lbl] = $values[0];
                            }
                            else if($values = @ldap_get_values($this->ldapconn, $entry, $at)) {
-                              if($values["count"] == 1) {
-                                 $v = $this->cvtQuotes($values[0]);
-                                 $usr[$lbl] = (!$fullDNs && strpos($v, "CN=") !== false && strtolower($at) != $this->options['dn']) ? str_replace('\\2C', ',', trim(ldap_explode_dn($v, 1)[0])) : $v;
+                              $usr[$lbl] = [];
+                              for ($i=0; $i < $values["count"]; $i++) {
+                                 $v = stripcslashes(str_replace([
+                                    chr(145),
+                                    chr(146),
+                                    chr(147),
+                                    chr(148),
+                                    chr(151)
+                                 ], [
+                                    "'",
+                                    "'",
+                                    '"',
+                                    '"',
+                                    ' - '
+                                 ], $values[$i]));
+                                 if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$i]);
+
+                                 if($values["count"] == 1) $usr[$lbl] = $v;
+                                 else array_push($usr[$lbl], $v);
                               }
-                              else {
-                                 $usr[$lbl] = [];
-                                 for ($i=0; $i < $values["count"]; $i++) {
-                                    $v = $this->cvtQuotes($values[$i]);
-                                    array_push($usr[$lbl], !$fullDNs ? ldap_explode_dn($v, 1)[0] : $v);
-                                 }
-                                 sort($usr[$lbl]);
-                              }
+                              if(is_array($usr[$lbl])) sort($usr[$lbl]);
                            }
                         }
                         array_push($list, new LDAPRecord($usr));
@@ -145,13 +136,27 @@
          return json_encode($list);
       }
 
-      public function member($user, $group) {
-         $usr = $this->search("({$this->options['identifier']}=$user)", [$this->options['member']]);
-         return isset($usr->$this->options['member']) ? count(array_intersect((array) $group, (array) $usr->$this->options['member'])) > 0 : false;
+      public function resolveDN($dn, $class = "top") {
+         $id = null;
+         if($rec = $this->search("(objectclass=$class)", $this->options['id'], $dn)) {
+            if(is_array($rec)) {
+               foreach($rec as $i) if(isset($i->{$this->options['id']})) $id = $i->{$this->options['id']};
+            }
+            else $id = $rec->{$this->options['id']};
+         }
+         return $id;
+      }
+
+      public function member($user, $group, array $options = []) {
+         $opt  = array_merge($this->options, $options);
+         if($usr = $this->search("({$opt['id']}=$user)", [$opt['member']], null, true)) {
+            return isset($usr->{$opt['member']}) ? count(array_intersect(array_map('strtolower', (array) $group), array_map('strtolower', (array) $usr->{$opt['member']}))) > 0 : false;
+         }
+         return null;
       }
 
       public function photo($user) {
-         $p = $this->search("({$this->options['identifier']}=$user)", ["photo" => $this->options['photo']]);
+         $p = $this->search("({$this->options['id']}=$user)", ["photo" => $this->options['photo']]);
 
          if(isset($p->photo)) {
             header('content-type: image/jpeg');

@@ -14,7 +14,7 @@
             "password",
             "dc=example,dc=com",
             [
-               "identifier" => "uid"
+               "id" => "uid"
             ]
          );
       }
@@ -31,7 +31,7 @@
       }
 
       public function testSearch() {
-         $res = $this->client->search("(ou=chemist*)", ["cn", "members" => "uniquemember"]);
+         $res = $this->client->search("(ou=chemist*)", ["cn", "members" => "uniquemember"], null, true);
          //var_dump($res);
 
          $this->assertTrue(isset($res->members) && in_array("curie", $res->members));
@@ -42,6 +42,16 @@
          //var_dump($res);
 
          $this->assertTrue($res && $res = '{"dn":"ou=chemists,dc=example,dc=com","name":"Chemists"}');
+      }
+
+      public function testMember() {
+         $res = $this->client->member("mathematicians", "gauss", [
+            "id"     => "ou",
+            "member" => "uniquemember"
+         ]);
+         var_dump($res);
+
+         $this->assertTrue($res);
       }
 
    }
