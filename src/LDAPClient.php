@@ -26,9 +26,9 @@
 
       public function __construct($server, $bindDN, $pass, $baseDN, array $options = []) {
          $this->server   = $server;
-         $this->bindDN     = $bindDN;
+         $this->bindDN   = $bindDN;
          $this->password = $pass;
-         $this->baseDN       = $baseDN;
+         $this->baseDN   = $baseDN;
          $this->options  = array_merge($this->options, $options);
          $this->connect();
       }
