@@ -1,5 +1,8 @@
 # LDAPClient Changelog
 
+[2022-10-06] Version 1.5
+   - Revised namespacing
+
 [2021-09-02] Version 1.4
    - Replaced search's fullDNs parameter with resolveDNs
    - New resolveDN method that will resolve a DN to an id
