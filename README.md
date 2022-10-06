@@ -21,14 +21,14 @@ echo implode("\n", $res->members);
 
 
 ```php
-if($user = $client->login("riemann", "password", ["fullname" => "cn", "mail"])) {
+if($user = $ldap->login("riemann", "password", ["fullname" => "cn", "mail"])) {
    echo "{$user->fullname} successfully logged in!";
 }
 else echo "Invalid username or password!";
 ```
 
 ```php
-if($this->client->member("mathematicians", "gauss", [
+if($ldap->member("mathematicians", "gauss", [
    "id"     => "ou",
    "member" => "uniquemember"
 ])) {
