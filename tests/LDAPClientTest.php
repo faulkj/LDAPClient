@@ -1,7 +1,7 @@
 <?php
 
    use PHPUnit\Framework\TestCase,
-       FaulkJ\LDAPClient\LDAPClient;
+       FaulkJ\LDAPClient;
 
    class LDAPClientTest extends TestCase {
 
@@ -49,7 +49,7 @@
             "id"     => "ou",
             "member" => "uniquemember"
          ]);
-         var_dump($res);
+         //var_dump($res);
 
          $this->assertTrue($res);
       }
