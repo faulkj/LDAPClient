@@ -1,15 +1,15 @@
-<?php namespace FaulkJ\LDAPClient;
+<?php namespace FaulkJ;
    /*
-    * LDAP Client Class v1.4
+    * LDAP Client Class v1.5
     *
-    * Kopimi 2021 Joshua Faulkenberry
+    * Kopimi 2022 Joshua Faulkenberry
     * Unlicensed under The Unlicense
     * http://unlicense.org/
     */
 
    class LDAPClient {
 
-      const   version = "1.4";
+      const   version = "1.5";
 
       private $server;
       private $dn;
@@ -55,7 +55,7 @@
 
          $res = false;
          if($usr = $this->search("({$this->options['id']}={$id})", $attr)) {
-            if($this->bind($usr->dn, $pass)) {
+            if(@$this->bind($usr->dn, $pass)) {
                $this->unbind();
                $res = $usr;
             }
@@ -113,7 +113,7 @@
                               if(is_array($usr[$lbl])) sort($usr[$lbl]);
                            }
                         }
-                        array_push($list, new LDAPRecord($usr));
+                        array_push($list, new LDAPClient\LDAPRecord($usr));
                      } while ($entry = ldap_next_entry($this->ldapconn, $entry));
                   }
                }
