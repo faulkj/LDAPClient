@@ -1,6 +1,6 @@
 <?php namespace FaulkJ;
 /*
- * LDAP Client Class v1.5
+ * LDAP Client Class v1.5.1
  *
  * Kopimi 2022 Joshua Faulkenberry
  * Unlicensed under The Unlicense
@@ -9,7 +9,7 @@
 
    class LDAPClient {
 
-      const   version = "1.5";
+      const   version = "1.5.1";
 
       private $server;
       private $dn;
