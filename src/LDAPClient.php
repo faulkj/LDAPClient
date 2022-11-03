@@ -1,11 +1,11 @@
 <?php namespace FaulkJ;
-   /*
-    * LDAP Client Class v1.5
-    *
-    * Kopimi 2022 Joshua Faulkenberry
-    * Unlicensed under The Unlicense
-    * http://unlicense.org/
-    */
+/*
+ * LDAP Client Class v1.5
+ *
+ * Kopimi 2022 Joshua Faulkenberry
+ * Unlicensed under The Unlicense
+ * http://unlicense.org/
+ */
 
    class LDAPClient {
 
@@ -17,10 +17,10 @@
       private $password;
       private $ldapconn;
       private $options = [
-         "dn"     => "distinguishedname",
-         "id"     => "samaccountname",
-         "member" => "memberof",
-         "photo"  => "thumbnailphoto"
+               "dn"     => "distinguishedname",
+               "id"     => "samaccountname",
+               "member" => "memberof",
+               "photo"  => "thumbnailphoto"
       ];
       private $debug   = false;
 
@@ -66,8 +66,8 @@
          return $res;
       }
 
-      public function search($filter, $attr = [], $dn = null, $resolveDNs = false) {
-         if($this->bind($this->bindDN, $this->password)) {
+      public function search($filter, $attr = [], $dn = null, $resolveDNs = false, $stayBound = false) {
+         if($stayBound || $this->bind($this->bindDN, $this->password)) {
             $dn = (array) ($dn ? $dn :$this->baseDN);
 
             $atx = (array) $attr;
@@ -93,17 +93,17 @@
                               $usr[$lbl] = [];
                               for ($i=0; $i < $values["count"]; $i++) {
                                  $v = stripcslashes(str_replace([
-                                    chr(145),
-                                    chr(146),
-                                    chr(147),
-                                    chr(148),
-                                    chr(151)
+                                          chr(145),
+                                          chr(146),
+                                          chr(147),
+                                          chr(148),
+                                          chr(151)
                                  ], [
-                                    "'",
-                                    "'",
-                                    '"',
-                                    '"',
-                                    ' - '
+                                          "'",
+                                          "'",
+                                          '"',
+                                          '"',
+                                          ' - '
                                  ], $values[$i]));
                                  if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$i]);
 
@@ -119,7 +119,7 @@
                }
             }
 
-            $this->unbind();
+            if(!$stayBound) $this->unbind();
 
             if(count($list) == 0) return null;
             else if(count($list) == 1) return current($list);
@@ -138,7 +138,7 @@
 
       public function resolveDN($dn, $class = "top") {
          $id = null;
-         if($rec = $this->search("(objectclass=$class)", $this->options['id'], $dn)) {
+         if($rec = $this->search("(objectclass=$class)", $this->options['id'], $dn, false, true)) {
             if(is_array($rec)) {
                foreach($rec as $i) if(isset($i->{$this->options['id']})) $id = $i->{$this->options['id']};
             }

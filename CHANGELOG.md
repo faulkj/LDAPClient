@@ -1,5 +1,8 @@
 # LDAPClient Changelog
 
+[2022-11-03] Version 1.5.1
+   - Fix for DN resolution
+
 [2022-10-06] Version 1.5
    - Revised namespacing
 
