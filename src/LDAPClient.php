@@ -1,6 +1,6 @@
 <?php namespace FaulkJ;
 /*
- * LDAP Client Class v1.5.1
+ * LDAP Client Class v1.5.2
  *
  * Kopimi 2022 Joshua Faulkenberry
  * Unlicensed under The Unlicense
@@ -9,7 +9,7 @@
 
    class LDAPClient {
 
-      const   version = "1.5.1";
+      const   version = "1.5.2";
 
       private $server;
       private $dn;
@@ -92,7 +92,7 @@
                            else if($values = @ldap_get_values($this->ldapconn, $entry, $at)) {
                               $usr[$lbl] = [];
                               for ($i=0; $i < $values["count"]; $i++) {
-                                 $v = stripcslashes(str_replace([
+                                 $v = str_replace([
                                           chr(145),
                                           chr(146),
                                           chr(147),
@@ -103,8 +103,8 @@
                                           "'",
                                           '"',
                                           '"',
-                                          ' - '
-                                 ], $values[$i]));
+                                          '-'
+                                 ], $values[$i]);
                                  if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$i]);
 
                                  if($values["count"] == 1) $usr[$lbl] = $v;

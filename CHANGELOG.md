@@ -1,5 +1,8 @@
 # LDAPClient Changelog
 
+***2022-11-04*** Version 1.5.2
+   - Removed backslash stripping from DNs
+
 ***2022-11-03*** Version 1.5.1
    - Fix for DN resolution handling
 
