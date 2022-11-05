@@ -78,43 +78,46 @@
                if($result = ldap_search($this->ldapconn, $dn[$x], $filter, $atx, 0, 0)) {
                   //if ( ldap_errno( $this->ldapconn ) === 4 ) echo 'Partial search results returned';
 
-                  if($entry = ldap_first_entry($this->ldapconn, $result)) {
-                     do {
-                        $usr = [];
-                        $usr["dn"] = ldap_get_dn($this->ldapconn, $entry);
+                  if($entries = ldap_get_entries($this->ldapconn, $result)) {
+                     for ($i=0; $i<$entries["count"]; $i++) {
+                        $res = [];
+                        $res["dn"] = $entries[$i]["dn"];
 
                         foreach((array) $attr as $key => $at) {
                            $lbl = is_string($key) ? $key : $at;
-
                            if($at == $this->options['photo']) {
-                              if($values = @ldap_get_values_len($this->ldapconn, $entry, $at)) $usr[$lbl] = $values[0];
+                              $res[$lbl] = $entries[$i][$at][0];
                            }
-                           else if($values = @ldap_get_values($this->ldapconn, $entry, $at)) {
-                              $usr[$lbl] = [];
-                              for ($i=0; $i < $values["count"]; $i++) {
-                                 $v = str_replace([
-                                          chr(145),
-                                          chr(146),
-                                          chr(147),
-                                          chr(148),
-                                          chr(151)
-                                 ], [
-                                          "'",
-                                          "'",
-                                          '"',
-                                          '"',
-                                          '-'
-                                 ], $values[$i]);
-                                 if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$i]);
-
-                                 if($values["count"] == 1) $usr[$lbl] = $v;
-                                 else array_push($usr[$lbl], $v);
+                           else {
+                              $res[$lbl] = [];
+                              if(isset($entries[$i][strtolower($at)])) {
+                                 $values = $entries[$i][strtolower($at)];
+                                 for ($x=0; $x < $values["count"]; $x++) {
+                                    $v = $values[$x];
+                                    if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$x]);
+                                    $v = str_replace([
+                                             chr(145),
+                                             chr(146),
+                                             chr(147),
+                                             chr(148),
+                                             chr(151)
+                                    ], [
+                                             "'",
+                                             "'",
+                                             '"',
+                                             '"',
+                                             '-'
+                                    ], $v);
+                                    if($values["count"] == 1) $res[$lbl] = $v;
+                                    else array_push($res[$lbl], $v);
+                                 }
+                                 if(is_array($res[$lbl])) sort($res[$lbl]);
                               }
-                              if(is_array($usr[$lbl])) sort($usr[$lbl]);
+                              if(is_array($res[$lbl]) && count($res[$lbl]) == 0) $res[$lbl] = null;
                            }
                         }
-                        array_push($list, new LDAPClient\LDAPRecord($usr));
-                     } while ($entry = ldap_next_entry($this->ldapconn, $entry));
+                        array_push($list, new LDAPClient\LDAPRecord($res));
+                     }
                   }
                }
             }

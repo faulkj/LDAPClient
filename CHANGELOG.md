@@ -2,6 +2,7 @@
 
 ***2022-11-04*** Version 1.5.2
    - Removed backslash stripping from DNs
+   - Overhauled search logic to improve speed
 
 ***2022-11-03*** Version 1.5.1
    - Fix for DN resolution handling
