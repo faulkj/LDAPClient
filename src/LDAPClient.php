@@ -1,6 +1,6 @@
 <?php namespace FaulkJ;
 /*
- * LDAP Client Class v1.5.2
+ * LDAP Client Class v1.5.3
  *
  * Kopimi 2022 Joshua Faulkenberry
  * Unlicensed under The Unlicense
@@ -9,7 +9,7 @@
 
    class LDAPClient {
 
-      const   version = "1.5.2";
+      const   version = "1.5.3";
 
       private $server;
       private $dn;
@@ -17,10 +17,10 @@
       private $password;
       private $ldapconn;
       private $options = [
-               "dn"     => "distinguishedname",
-               "id"     => "samaccountname",
-               "member" => "memberof",
-               "photo"  => "thumbnailphoto"
+         "dn"     => "distinguishedname",
+         "id"     => "samaccountname",
+         "member" => "memberof",
+         "photo"  => "thumbnailphoto"
       ];
       private $debug   = false;
 
@@ -75,51 +75,44 @@
             $list = [];
 
             for($x = 0; $x < count($dn); $x++) {
-               if($result = ldap_search($this->ldapconn, $dn[$x], $filter, $atx, 0, 0)) {
-                  //if ( ldap_errno( $this->ldapconn ) === 4 ) echo 'Partial search results returned';
+               $cookie = "";
+               do {
+                  if($result = ldap_search($this->ldapconn, $dn[$x], $filter, $atx, 0, 0, 0, LDAP_DEREF_NEVER, [['oid' => LDAP_CONTROL_PAGEDRESULTS, 'value' => ['size' => 500, 'cookie' => $cookie]]])) {
+                     if($entries = ldap_get_entries($this->ldapconn, $result)) {
+                        for ($i = 0; $i < $entries["count"]; $i++) {
+                           $res = [];
+                           $res["dn"] = $entries[$i]["dn"];
 
-                  if($entries = ldap_get_entries($this->ldapconn, $result)) {
-                     for ($i=0; $i<$entries["count"]; $i++) {
-                        $res = [];
-                        $res["dn"] = $entries[$i]["dn"];
+                           foreach((array) $attr as $key => $at) {
+                              $lbl = is_string($key) ? $key : $at;
+                              if($at == $this->options['photo']) $res[$lbl] = $entries[$i][$at][0];
+                              else {
+                                 $res[$lbl] = [];
+                                 if(isset($entries[$i][strtolower($at)])) {
+                                    $values = $entries[$i][strtolower($at)];
 
-                        foreach((array) $attr as $key => $at) {
-                           $lbl = is_string($key) ? $key : $at;
-                           if($at == $this->options['photo']) {
-                              $res[$lbl] = $entries[$i][$at][0];
-                           }
-                           else {
-                              $res[$lbl] = [];
-                              if(isset($entries[$i][strtolower($at)])) {
-                                 $values = $entries[$i][strtolower($at)];
-                                 for ($x=0; $x < $values["count"]; $x++) {
-                                    $v = $values[$x];
-                                    if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($values[$x]);
-                                    $v = str_replace([
-                                             chr(145),
-                                             chr(146),
-                                             chr(147),
-                                             chr(148),
-                                             chr(151)
-                                    ], [
-                                             "'",
-                                             "'",
-                                             '"',
-                                             '"',
-                                             '-'
-                                    ], $v);
-                                    if($values["count"] == 1) $res[$lbl] = $v;
-                                    else array_push($res[$lbl], $v);
+                                    if($values["count"] == 1) {
+                                       $res[$lbl] = $values[0];
+                                       if($resolveDNs && strpos(strtoupper($res[$lbl]), "DC=") !== false) $res[$lbl] = $this->resolveDN($res[$lbl]);
+                                    }
+                                    else for ($x=0; $x < $values["count"]; $x++) {
+                                       $v = $values[$x];
+                                       if($resolveDNs && strpos(strtoupper($v), "DC=") !== false) $v = $this->resolveDN($v);
+                                       array_push($res[$lbl], $v);
+                                    }
+                                    if(is_array($res[$lbl])) sort($res[$lbl]);
                                  }
-                                 if(is_array($res[$lbl])) sort($res[$lbl]);
+                                 if(is_array($res[$lbl]) && count($res[$lbl]) == 0) $res[$lbl] = null;
                               }
-                              if(is_array($res[$lbl]) && count($res[$lbl]) == 0) $res[$lbl] = null;
                            }
+                           array_push($list, new LDAPClient\LDAPRecord($res));
                         }
-                        array_push($list, new LDAPClient\LDAPRecord($res));
                      }
+                     ldap_parse_result($this->ldapconn, $result, $errcode, $matcheddn, $errmsg, $referrals, $controls);
+                     if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) $cookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+                     else $cookie = '';
                   }
-               }
+               } while(!empty($cookie));
             }
 
             if(!$stayBound) $this->unbind();

@@ -1,5 +1,9 @@
 # LDAPClient Changelog
 
+***2022-11-11*** Version 1.5.3
+   - Added pagination logic to handle more than a thousand results
+   - Speed improvements
+
 ***2022-11-04*** Version 1.5.2
    - Removed backslash stripping from DNs
    - Overhauled search logic to improve speed
