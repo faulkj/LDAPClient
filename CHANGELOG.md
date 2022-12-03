@@ -1,5 +1,8 @@
 # LDAPClient Changelog
 
+***2022-12-02*** Version 1.5.4
+   - Bug fixes
+
 ***2022-11-11*** Version 1.5.3
    - Added pagination logic to handle more than a thousand results
    - Speed improvements

@@ -1,8 +1,8 @@
 <?php namespace FaulkJ\LDAPClient;
    /*
-    * LDAP Record Class for LDAPClient v1.5.2
+    * LDAP Record Class for LDAPClient v1.5.4
     *
-    * Kopimi 2022 Joshua Faulkenberry
+    * Kopimi 2023 Joshua Faulkenberry
     * Unlicensed under The Unlicense
     * http://unlicense.org/
     */
@@ -30,7 +30,7 @@
          trigger_error("Can't modify a record");
       }
 
-      public function jsonSerialize() {
+      public function jsonSerialize(): mixed {
          return $this->_data;
       }
 
