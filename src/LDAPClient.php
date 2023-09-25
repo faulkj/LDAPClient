@@ -13,6 +13,8 @@ class LDAPClient {
 
    private $server;
    private $dn;
+   private $bindDN;
+   private $baseDN;
    private $user;
    private $password;
    private $ldapconn;
@@ -30,23 +32,6 @@ class LDAPClient {
       $this->password = $pass;
       $this->baseDN   = $baseDN;
       $this->options  = array_merge($this->options, $options);
-      $this->connect();
-   }
-
-   private function connect() {
-      $this->ldapconn = ldap_connect($this->server);
-      ldap_set_option($this->ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
-      ldap_set_option($this->ldapconn, LDAP_OPT_REFERRALS, 0);
-   }
-
-   private function bind($dn, $pass) {
-      if(!$dn || !$pass) return false;
-      else return ldap_bind($this->ldapconn, $dn, $pass);
-      if($this->debug && ldap_error($this->ldapconn) != "Success") $this->error("Binding failed.", $dn);
-   }
-
-   private function unbind() {
-      ldap_unbind($this->ldapconn);
       $this->connect();
    }
 
@@ -132,17 +117,6 @@ class LDAPClient {
       return json_encode($list);
    }
 
-   public function resolveDN($dn, $class = "top") {
-      $id = null;
-      if($rec = $this->search("(objectclass=$class)", $this->options['id'], $dn, false, true)) {
-         if(is_array($rec)) {
-            foreach($rec as $i) if(isset($i->{$this->options['id']})) $id = $i->{$this->options['id']};
-         }
-         else $id = $rec->{$this->options['id']};
-      }
-      return $id;
-   }
-
    public function member($user, $group, array $options = []) {
       $opt  = array_merge($this->options, $options);
       if($usr = $this->search("({$opt['id']}=$user)", [$opt['member']], null, true)) {
@@ -175,7 +149,35 @@ class LDAPClient {
       return $this;
    }
 
-   public function error($msg, $usr = null) {
+   private function connect() {
+      $this->ldapconn = ldap_connect($this->server);
+      ldap_set_option($this->ldapconn, LDAP_OPT_PROTOCOL_VERSION, 3);
+      ldap_set_option($this->ldapconn, LDAP_OPT_REFERRALS, 0);
+   }
+
+   private function bind($dn, $pass) {
+      if(!$dn || !$pass) return false;
+      else return ldap_bind($this->ldapconn, $dn, $pass);
+      if($this->debug && ldap_error($this->ldapconn) != "Success") $this->error("Binding failed.", $dn);
+   }
+
+   private function unbind() {
+      ldap_unbind($this->ldapconn);
+      $this->connect();
+   }
+
+   private function resolveDN($dn, $class = "top") {
+      $id = null;
+      if($rec = $this->search("(objectclass=$class)", $this->options['id'], $dn, false, true)) {
+         if(is_array($rec)) {
+            foreach($rec as $i) if(isset($i->{$this->options['id']})) $id = $i->{$this->options['id']};
+         }
+         else $id = $rec->{$this->options['id']};
+      }
+      return $id;
+   }
+
+   private function error($msg, $usr = null) {
       echo("\n\n$msg\n" . ldap_error($this->ldapconn) . "\n");
       if($usr) echo "Bind DN: $usr\n";
    }
