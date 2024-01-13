@@ -2,6 +2,7 @@
 
 ### Version 1.5.5 *2024-01-12*
    - Made resolveDN and error methods private
+   - Fixed missing declarations
 
 ### Version 1.5.4 *2022-12-02*
    - Bug fixes
