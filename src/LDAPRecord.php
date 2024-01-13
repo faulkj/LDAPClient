@@ -1,8 +1,8 @@
 <?php namespace FaulkJ\LDAPClient;
    /*
-    * LDAP Record Class for LDAPClient v1.5.4
+    * LDAP Record Class for LDAPClient v1.5.5
     *
-    * Kopimi 2023 Joshua Faulkenberry
+    * Kopimi 2024 Joshua Faulkenberry
     * Unlicensed under The Unlicense
     * http://unlicense.org/
     */
